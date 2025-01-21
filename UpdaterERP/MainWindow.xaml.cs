@@ -4,46 +4,78 @@ using System.IO.Compression;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Windows;
+using UpdaterERP.Services; // Add this namespace
 
 namespace UpdaterERP
 {
     public partial class MainWindow : Window
     {
-        // Hardcoded GitHub URLs
-        private readonly string frontUrl = @"https://github.com/ihec-iq/masr-erp/releases/download/beta/dist.zip";
+        // GitHub repository details
+        private readonly string repoOwner = "ihec-iq";
+        private readonly string repoName = "masr-erp";
+
+        // URL for the latest release
+        private string frontUrl;
+
+        // Hardcoded backend URL
         private readonly string backUrl = @"https://github.com/ihec-iq/ihec-backend-11/archive/refs/heads/main.zip";
 
         // Path to the local file for saving paths
         private readonly string pathsFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "paths.txt");
 
+        // Services
+        private readonly GitHubReleaseService githubService;
+        private readonly PathStorageService pathStorageService;
+
         public MainWindow()
         {
             InitializeComponent();
 
+            // Initialize services
+            githubService = new GitHubReleaseService(repoOwner, repoName);
+            pathStorageService = new PathStorageService(pathsFilePath);
+
             // Load saved paths when the application starts
             LoadPaths();
+
+            // Fetch the latest release URL for the frontend
+            FetchLatestReleaseUrl();
+        }
+
+        private async void FetchLatestReleaseUrl()
+        {
+            try
+            {
+                // Fetch the latest release URL
+                frontUrl = await githubService.FetchLatestReleaseUrlAsync();
+
+                if (string.IsNullOrEmpty(frontUrl))
+                {
+                    lblState.Content = "No .zip asset found in the latest release.";
+                }
+            }
+            catch (Exception ex)
+            {
+                lblState.Content = $"Error fetching latest release URL: {ex.Message}";
+            }
         }
 
         private void LoadPaths()
         {
-            // Check if the file exists
-            if (File.Exists(pathsFilePath))
+            try
             {
-                try
-                {
-                    // Read all lines from the file
-                    string[] paths = File.ReadAllLines(pathsFilePath);
+                // Load paths from the file
+                string[] paths = pathStorageService.LoadPaths();
 
-                    // Set the paths in the text boxes
-                    if (paths.Length >= 1)
-                        txtPathFront.Text = paths[0];
-                    if (paths.Length >= 2)
-                        txtPathBack.Text = paths[1];
-                }
-                catch (Exception ex)
-                {
-                    lblState.Content = $"Error loading paths: {ex.Message}";
-                }
+                // Set the paths in the text boxes
+                if (paths.Length >= 1)
+                    txtPathFront.Text = paths[0];
+                if (paths.Length >= 2)
+                    txtPathBack.Text = paths[1];
+            }
+            catch (Exception ex)
+            {
+                lblState.Content = ex.Message;
             }
         }
 
@@ -52,11 +84,11 @@ namespace UpdaterERP
             try
             {
                 // Save the paths to the file
-                File.WriteAllLines(pathsFilePath, new[] { txtPathFront.Text, txtPathBack.Text });
+                pathStorageService.SavePaths(txtPathFront.Text, txtPathBack.Text);
             }
             catch (Exception ex)
             {
-                lblState.Content = $"Error saving paths: {ex.Message}";
+                lblState.Content = ex.Message;
             }
         }
 
@@ -105,6 +137,12 @@ namespace UpdaterERP
                 // Download and process front file if the checkbox is checked
                 if (ChPathFront.IsChecked == true)
                 {
+                    if (string.IsNullOrEmpty(frontUrl))
+                    {
+                        lblState.Content = "Failed to fetch the latest frontend release URL.";
+                        return;
+                    }
+
                     lblState.Content = "Downloading front files...";
                     string frontZipPath = await DownloadFileAsync(frontUrl, "front.zip", (progress, downloadedBytes, totalBytes) =>
                     {
@@ -145,6 +183,7 @@ namespace UpdaterERP
                 ProgressBarLoading.Visibility = Visibility.Collapsed;
             }
         }
+
         private async Task<string> DownloadFileAsync(string url, string fileName, Action<int, long, long> progressCallback)
         {
             using (HttpClient client = new HttpClient())

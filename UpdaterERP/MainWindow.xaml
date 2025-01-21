@@ -1,0 +1,46 @@
+﻿<Window x:Class="UpdaterERP.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:UpdaterERP"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="450" Width="800">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="2*"/>
+            <ColumnDefinition Width="3*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- Image Section -->
+        <Grid Grid.Column="0" Background="#007ACC">
+            <Image Name="ImgLogin" Source="Resources/images/login.jpg" Stretch="UniformToFill"/>
+        </Grid>
+
+        <!-- Login Form Section -->
+        <Grid Grid.Column="1" Margin="20">
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                <TextBlock Text="Update ERP MSAR - تحديث نظام مسار " FontSize="24" FontWeight="Bold"  Foreground="#333" Margin="0,0,0,20" HorizontalAlignment="Center"/>
+
+                <!-- Frontend Path Section -->
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                    <CheckBox Name="ChPathFront" IsChecked="True" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                    <Label Content="Path of Frontend" FontWeight="Bold" Foreground="#333" VerticalAlignment="Center"/>
+                </StackPanel>
+                <TextBox Name="txtPathFront" Text="D:\xampp\htdocs\erp-msar1" Width="378" Margin="0,0,0,10" Padding="5" IsEnabled="{Binding ElementName=ChPathFront, Path=IsChecked}"/>
+
+                <!-- Backend Path Section -->
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,20">
+                    <CheckBox Name="ChPathBack" IsChecked="True" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                    <Label Content="Path of Backend" FontWeight="Bold" Foreground="#333" VerticalAlignment="Center"/>
+                </StackPanel>
+                <TextBox Name="txtPathBack" Text="D:\xampp\htdocs\ihec-backend-111" Width="375" Margin="0,0,0,20" Padding="5" IsEnabled="{Binding ElementName=ChPathBack, Path=IsChecked}"/>
+
+                <!-- Download Section -->
+                <Label Content="Download files..." Name="lblState" FontWeight="Bold" Foreground="#333" />
+                <Button Name="BtnDownload" Content="Download" Width="200" Padding="5" Background="#007ACC" Foreground="White"  Click="BtnDownload_Click"/>
+                <ProgressBar Name="ProgressBarLoading" Width="200" Height="20" Visibility="Collapsed" IsIndeterminate="True" Margin="10"/>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Window>

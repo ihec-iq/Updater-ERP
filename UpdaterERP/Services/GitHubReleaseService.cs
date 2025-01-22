@@ -9,6 +9,7 @@ namespace UpdaterERP.Services
     {
         private readonly string repoOwner;
         private readonly string repoName;
+        public string GitHubName { get; private set; }
 
         public GitHubReleaseService(string repoOwner, string repoName)
         {
@@ -40,6 +41,7 @@ namespace UpdaterERP.Services
 
                         // Get the assets array
                         JsonElement assets = root.GetProperty("assets");
+                        GitHubName = root.GetProperty("name").ToString();
 
                         // Find the .zip asset
                         foreach (JsonElement asset in assets.EnumerateArray())

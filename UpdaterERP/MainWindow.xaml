@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:UpdaterERP"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="ERP Updater" Height="450" Width="800">
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="2*"/>
@@ -40,6 +40,8 @@
                 <Label Content="Download files..." Name="lblState" FontWeight="Bold" Foreground="#333" />
                 <Button Name="BtnDownload" Content="Download" Width="200" Padding="5" Background="#007ACC" Foreground="White"  Click="BtnDownload_Click"/>
                 <ProgressBar Name="ProgressBarLoading" Width="200" Height="20" Visibility="Collapsed" IsIndeterminate="True" Margin="10"/>
+                <Label Content="version" Name="lblVersion" FontWeight="Light" Foreground="#333" />
+
             </StackPanel>
         </Grid>
     </Grid>

@@ -6,6 +6,19 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
+    <ApplicationIcon>up-arrow.ico</ApplicationIcon>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Resources\images\login.jpg" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="up-arrow.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Resources\images\login.jpg" />
+  </ItemGroup>
 
 </Project>

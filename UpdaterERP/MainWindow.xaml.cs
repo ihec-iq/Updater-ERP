@@ -3,8 +3,10 @@ using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Media.Imaging;
-using UpdaterERP.Services; // Add this namespace
+using System.Windows.Forms; // Add this namespace for FolderBrowserDialog
+using Microsoft.WindowsAPICodePack.Dialogs;
+
+using UpdaterERP.Services;
 
 namespace UpdaterERP
 {
@@ -12,13 +14,13 @@ namespace UpdaterERP
     {
         // GitHub repository details
         private readonly string repoOwner = "ihec-iq";
-        private readonly string repoName = "masr-erp";
+        private readonly string repoName = "msar-erp";
 
         // URL for the latest release
         private string frontUrl = "";
 
         // Hardcoded backend URL
-        private readonly string backUrl = @"https://github.com/ihec-iq/ihec-backend-11/archive/refs/heads/main.zip";
+        private readonly string backUrl = @"https://github.com/ihec-iq/msar-backend-11/archive/refs/heads/main.zip";
 
         // Path to the local file for saving paths
         private readonly string pathsFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "paths.txt");
@@ -31,7 +33,6 @@ namespace UpdaterERP
         public MainWindow()
         {
             InitializeComponent();
-            //ImgLogin.Source = new BitmapImage(new Uri("Resources/images/login.jpg", UriKind.RelativeOrAbsolute));
 
             // Initialize services
             gitHubService = new GitHubReleaseService(repoOwner, repoName);
@@ -51,7 +52,7 @@ namespace UpdaterERP
             {
                 // Fetch the latest release URL
                 frontUrl = await gitHubService.FetchLatestReleaseUrlAsync();
-                lblVersion.Content = gitHubService.GitHubName;
+                lblVersion.Content = "Online Version: "+gitHubService.GitHubName;
                 if (string.IsNullOrEmpty(frontUrl))
                 {
                     lblState.Content = "No .zip asset found in the latest release.";
@@ -93,6 +94,32 @@ namespace UpdaterERP
             {
                 lblState.Content = ex.Message;
             }
+        }
+
+ 
+private void BtnBrowseFront_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new CommonOpenFileDialog();
+        dialog.IsFolderPicker = true;
+        dialog.Title = "Select Frontend Folder";
+
+        if (dialog.ShowDialog() == CommonFileDialogResult.Ok)
+        {
+            txtPathFront.Text = dialog.FileName;
+        }
+    }
+
+    private void BtnBrowseBack_Click(object sender, RoutedEventArgs e)
+        {
+            // Open folder browser dialog
+            var dialog = new CommonOpenFileDialog();
+            dialog.IsFolderPicker = true;
+            dialog.Title = "Select Backend Folder";
+
+            if (dialog.ShowDialog() == CommonFileDialogResult.Ok)
+            {
+                txtPathBack.Text = dialog.FileName;
+            }  
         }
 
         private async void BtnDownload_Click(object sender, RoutedEventArgs e)
@@ -160,9 +187,21 @@ namespace UpdaterERP
                     lblState.Content = "Back files downloaded and extracted successfully!";
 
                     // Run "php artisan migrate" in the backend folder after download and extraction
-                    lblState.Content = "Running database migrations...";
-                    fileService.RunCommand(backFolderPath, "php artisan migrate");
-                    lblState.Content = "Database migrations completed successfully!";
+                    lblState.Content = "Running database operations...";
+                    if (ChFirstSetup.IsChecked == true)
+                    {
+                        // Rename .env.example to .env
+                        fileService.RenameFile(backFolderPath, ".env.example", ".env");
+                        fileService.RunCommand(backFolderPath, "composer update");
+                        fileService.RunCommand(backFolderPath, "php artisan migrate --seed");
+                        fileService.RunCommand(backFolderPath, "php artisan storage:link");
+                        lblState.Content = "Database setup completed successfully!";
+                    }
+                    else
+                    {
+                        fileService.RunCommand(backFolderPath, "php artisan migrate");
+                        lblState.Content = "Database migrations completed successfully!";
+                    }
                 }
 
                 // Final message
@@ -179,6 +218,7 @@ namespace UpdaterERP
                 ProgressBarLoading.Visibility = Visibility.Collapsed;
             }
         }
+
         private async Task<string> DownloadFileAsync(string url, string fileName, Action<int, long, long> progressCallback)
         {
             using (HttpClient client = new HttpClient())

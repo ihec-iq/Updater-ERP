@@ -80,7 +80,6 @@ namespace UpdaterERP.Services
 
             return $"{len:0.##} {sizes[order]}";
         }
-
         public void RunCommand(string workingDirectory, string command)
         {
             try
@@ -91,10 +90,40 @@ namespace UpdaterERP.Services
                 {
                     FileName = "cmd.exe",
                     WorkingDirectory = workingDirectory, // Set the working directory
-                    Arguments = $"/C {command}", // Run the command and terminate
+                    Arguments = $"/C {command}", // Run the command and close the window when done
+                    UseShellExecute = true, // Enable shell execute to allow visible windows
+                    CreateNoWindow = false // Ensure the window is visible
+                };
+
+                process.StartInfo = startInfo;
+
+                // Start the process
+                process.Start();
+
+                // Wait for the process to exit (optional if you want synchronous execution)
+                process.WaitForExit();
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error running command: {ex.Message}");
+            }
+        }
+
+
+        public void RunCommandOld(string workingDirectory, string command)
+        {
+            try
+            {
+                // Create a new process to run the command
+                Process process = new Process();
+                ProcessStartInfo startInfo = new ProcessStartInfo
+                {
+                    FileName = "cmd.exe",
+                    WorkingDirectory = workingDirectory, // Set the working directory
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
-                    UseShellExecute = false,
+                    Arguments = $"/K {command}", // Run the command and keep the window open
+                    UseShellExecute = true, // Enable shell execute to allow visible windows
                     CreateNoWindow = false // Set to true if you don't want a visible window
                 };
 
@@ -123,6 +152,27 @@ namespace UpdaterERP.Services
             catch (Exception ex)
             {
                 throw new Exception($"Error running command: {ex.Message}");
+            }
+        }
+        public void RenameFile(string directoryPath, string oldFileName, string newFileName)
+        {
+            try
+            {
+                string oldFilePath = Path.Combine(directoryPath, oldFileName);
+                string newFilePath = Path.Combine(directoryPath, newFileName);
+
+                // Check if the old file exists
+                if (!File.Exists(oldFilePath))
+                {
+                    throw new FileNotFoundException($"File not found: {oldFilePath}");
+                }
+
+                // Rename the file
+                File.Move(oldFilePath, newFilePath,true);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error renaming file: {ex.Message}");
             }
         }
     }

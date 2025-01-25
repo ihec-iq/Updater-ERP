@@ -1,49 +1,85 @@
 ﻿using System;
 using System.IO;
-using System.IO.Compression;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Forms; // Add this namespace for FolderBrowserDialog
+using Microsoft.WindowsAPICodePack.Dialogs;
+
+using UpdaterERP.Services;
 
 namespace UpdaterERP
 {
     public partial class MainWindow : Window
     {
-        // Hardcoded GitHub URLs
-        private readonly string frontUrl = @"https://github.com/ihec-iq/masr-erp/releases/download/beta/dist.zip";
-        private readonly string backUrl = @"https://github.com/ihec-iq/ihec-backend-11/archive/refs/heads/main.zip";
+        // GitHub repository details
+        private readonly string repoOwner = "ihec-iq";
+        private readonly string repoName = "msar-erp";
+
+        // URL for the latest release
+        private string frontUrl = "";
+
+        // Hardcoded backend URL
+        private readonly string backUrl = @"https://github.com/ihec-iq/msar-backend-11/archive/refs/heads/main.zip";
 
         // Path to the local file for saving paths
         private readonly string pathsFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "paths.txt");
+
+        // Services
+        private readonly GitHubReleaseService gitHubService;
+        private readonly PathStorageService pathStorageService;
+        private readonly FileService fileService;
 
         public MainWindow()
         {
             InitializeComponent();
 
+            // Initialize services
+            gitHubService = new GitHubReleaseService(repoOwner, repoName);
+            pathStorageService = new PathStorageService(pathsFilePath);
+            fileService = new FileService();
+
             // Load saved paths when the application starts
             LoadPaths();
+
+            // Fetch the latest release URL for the frontend
+            FetchLatestReleaseUrl();
+        }
+
+        private async void FetchLatestReleaseUrl()
+        {
+            try
+            {
+                // Fetch the latest release URL
+                frontUrl = await gitHubService.FetchLatestReleaseUrlAsync();
+                lblVersion.Content = "Online Version: "+gitHubService.GitHubName;
+                if (string.IsNullOrEmpty(frontUrl))
+                {
+                    lblState.Content = "No .zip asset found in the latest release.";
+                }
+            }
+            catch (Exception ex)
+            {
+                lblState.Content = $"Error fetching latest release URL: {ex.Message}";
+            }
         }
 
         private void LoadPaths()
         {
-            // Check if the file exists
-            if (File.Exists(pathsFilePath))
+            try
             {
-                try
-                {
-                    // Read all lines from the file
-                    string[] paths = File.ReadAllLines(pathsFilePath);
+                // Load paths from the file
+                string[] paths = pathStorageService.LoadPaths();
 
-                    // Set the paths in the text boxes
-                    if (paths.Length >= 1)
-                        txtPathFront.Text = paths[0];
-                    if (paths.Length >= 2)
-                        txtPathBack.Text = paths[1];
-                }
-                catch (Exception ex)
-                {
-                    lblState.Content = $"Error loading paths: {ex.Message}";
-                }
+                // Set the paths in the text boxes
+                if (paths.Length >= 1)
+                    txtPathFront.Text = paths[0];
+                if (paths.Length >= 2)
+                    txtPathBack.Text = paths[1];
+            }
+            catch (Exception ex)
+            {
+                lblState.Content = ex.Message;
             }
         }
 
@@ -52,12 +88,38 @@ namespace UpdaterERP
             try
             {
                 // Save the paths to the file
-                File.WriteAllLines(pathsFilePath, new[] { txtPathFront.Text, txtPathBack.Text });
+                pathStorageService.SavePaths(txtPathFront.Text, txtPathBack.Text);
             }
             catch (Exception ex)
             {
-                lblState.Content = $"Error saving paths: {ex.Message}";
+                lblState.Content = ex.Message;
             }
+        }
+
+ 
+private void BtnBrowseFront_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new CommonOpenFileDialog();
+        dialog.IsFolderPicker = true;
+        dialog.Title = "Select Frontend Folder";
+
+        if (dialog.ShowDialog() == CommonFileDialogResult.Ok)
+        {
+            txtPathFront.Text = dialog.FileName;
+        }
+    }
+
+    private void BtnBrowseBack_Click(object sender, RoutedEventArgs e)
+        {
+            // Open folder browser dialog
+            var dialog = new CommonOpenFileDialog();
+            dialog.IsFolderPicker = true;
+            dialog.Title = "Select Backend Folder";
+
+            if (dialog.ShowDialog() == CommonFileDialogResult.Ok)
+            {
+                txtPathBack.Text = dialog.FileName;
+            }  
         }
 
         private async void BtnDownload_Click(object sender, RoutedEventArgs e)
@@ -78,18 +140,6 @@ namespace UpdaterERP
                 return;
             }
 
-            if (ChPathFront.IsChecked == true && !Directory.Exists(frontFolderPath))
-            {
-                lblState.Content = "The frontend folder path is invalid or does not exist.";
-                return;
-            }
-
-            if (ChPathBack.IsChecked == true && !Directory.Exists(backFolderPath))
-            {
-                lblState.Content = "The backend folder path is invalid or does not exist.";
-                return;
-            }
-
             try
             {
                 // Disable the button during the process
@@ -105,13 +155,19 @@ namespace UpdaterERP
                 // Download and process front file if the checkbox is checked
                 if (ChPathFront.IsChecked == true)
                 {
+                    if (string.IsNullOrEmpty(frontUrl))
+                    {
+                        lblState.Content = "Failed to fetch the latest frontend release URL.";
+                        return;
+                    }
+
                     lblState.Content = "Downloading front files...";
                     string frontZipPath = await DownloadFileAsync(frontUrl, "front.zip", (progress, downloadedBytes, totalBytes) =>
                     {
                         ProgressBarLoading.Value = progress;
-                        lblState.Content = $"Downloading front files... {FormatBytes(downloadedBytes)}/{FormatBytes(totalBytes)}";
+                        lblState.Content = $"Downloading front files... {fileService.FormatBytes(downloadedBytes)}/{fileService.FormatBytes(totalBytes)}";
                     });
-                    await ExtractAndMoveFilesAsync(frontZipPath, frontFolderPath);
+                    await fileService.ExtractAndMoveFilesAsync(frontZipPath, frontFolderPath);
                     lblState.Content = "Front files downloaded and extracted successfully!";
                 }
 
@@ -125,14 +181,31 @@ namespace UpdaterERP
                     string backZipPath = await DownloadFileAsync(backUrl, "back.zip", (progress, downloadedBytes, totalBytes) =>
                     {
                         ProgressBarLoading.Value = progress;
-                        lblState.Content = $"Downloading back files... {FormatBytes(downloadedBytes)}/{FormatBytes(totalBytes)}";
+                        lblState.Content = $"Downloading back files... {fileService.FormatBytes(downloadedBytes)}/{fileService.FormatBytes(totalBytes)}";
                     });
-                    await ExtractAndMoveFilesAsync(backZipPath, backFolderPath);
+                    await fileService.ExtractAndMoveFilesAsync(backZipPath, backFolderPath);
                     lblState.Content = "Back files downloaded and extracted successfully!";
+
+                    // Run "php artisan migrate" in the backend folder after download and extraction
+                    lblState.Content = "Running database operations...";
+                    if (ChFirstSetup.IsChecked == true)
+                    {
+                        // Rename .env.example to .env
+                        fileService.RenameFile(backFolderPath, ".env.example", ".env");
+                        fileService.RunCommand(backFolderPath, "composer update");
+                        fileService.RunCommand(backFolderPath, "php artisan migrate --seed");
+                        fileService.RunCommand(backFolderPath, "php artisan storage:link");
+                        lblState.Content = "Database setup completed successfully!";
+                    }
+                    else
+                    {
+                        fileService.RunCommand(backFolderPath, "php artisan migrate");
+                        lblState.Content = "Database migrations completed successfully!";
+                    }
                 }
 
                 // Final message
-                lblState.Content = "Update completed successfully!";
+                lblState.Content = "Download and migration completed successfully!";
             }
             catch (Exception ex)
             {
@@ -145,6 +218,7 @@ namespace UpdaterERP
                 ProgressBarLoading.Visibility = Visibility.Collapsed;
             }
         }
+
         private async Task<string> DownloadFileAsync(string url, string fileName, Action<int, long, long> progressCallback)
         {
             using (HttpClient client = new HttpClient())
@@ -180,79 +254,6 @@ namespace UpdaterERP
 
                 return System.IO.Path.Combine(Path.GetTempPath(), fileName);
             }
-        }
-
-        private async Task ExtractAndMoveFilesAsync(string zipFilePath, string destinationFolderPath)
-        {
-            if (!File.Exists(zipFilePath))
-            {
-                throw new FileNotFoundException("Zip file not found.");
-            }
-
-            // Ensure the destination folder exists
-            if (!Directory.Exists(destinationFolderPath))
-            {
-                Directory.CreateDirectory(destinationFolderPath); // Create the folder if it doesn't exist
-            }
-
-            // Extract the zip file
-            using (ZipArchive archive = ZipFile.OpenRead(zipFilePath))
-            {
-                foreach (ZipArchiveEntry entry in archive.Entries)
-                {
-                    // Skip directories (they are represented as empty entries)
-                    if (entry.FullName.EndsWith("/") || entry.FullName.EndsWith("\\"))
-                        continue;
-
-                    // Remove the top-level folder from the entry's full name
-                    string entryPath = RemoveTopLevelFolder(entry.FullName);
-
-                    // Combine the destination folder path with the modified entry path
-                    string destinationPath = System.IO.Path.Combine(destinationFolderPath, entryPath);
-
-                    // Ensure the parent directory exists
-                    string parentDirectory = System.IO.Path.GetDirectoryName(destinationPath);
-                    if (!Directory.Exists(parentDirectory))
-                    {
-                        Directory.CreateDirectory(parentDirectory); // Create the parent directory if it doesn't exist
-                    }
-
-                    // Extract the file
-                    entry.ExtractToFile(destinationPath, overwrite: true);
-                }
-            }
-
-            // Delete the zip file after extraction
-            File.Delete(zipFilePath);
-        }
-
-        private string RemoveTopLevelFolder(string fullName)
-        {
-            // Split the full name into parts
-            string[] parts = fullName.Split(new[] { '/', '\\' }, StringSplitOptions.RemoveEmptyEntries);
-
-            // If there are no parts, return the original full name
-            if (parts.Length == 0)
-                return fullName;
-
-            // Remove the first part (top-level folder)
-            return string.Join(Path.DirectorySeparatorChar.ToString(), parts.Skip(1));
-        }
-
-        private string FormatBytes(long bytes)
-        {
-            // Convert bytes to a human-readable format (KB, MB, GB)
-            string[] sizes = { "B", "KB", "MB", "GB", "TB" };
-            int order = 0;
-            double len = bytes;
-
-            while (len >= 1024 && order < sizes.Length - 1)
-            {
-                order++;
-                len /= 1024;
-            }
-
-            return $"{len:0.##} {sizes[order]}";
         }
     }
 }

@@ -1,9 +1,8 @@
-﻿using System;
+﻿using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
-using System.Threading.Tasks;
+using System.Reflection;
 using System.Windows;
-using System.Windows.Forms; // Add this namespace for FolderBrowserDialog
 using Microsoft.WindowsAPICodePack.Dialogs;
 
 using UpdaterERP.Services;
@@ -44,6 +43,14 @@ namespace UpdaterERP
 
             // Fetch the latest release URL for the frontend
             FetchLatestReleaseUrl();
+            VersionLabel.Text = GetApplicationVersion();
+        }
+
+        private string GetApplicationVersion()
+        {
+            // Get the version from the assembly
+            var version = Assembly.GetExecutingAssembly().GetName().Version;
+            return $"v{version.Major}.{version.Minor}.{version.Build}";
         }
 
         private async void FetchLatestReleaseUrl()
@@ -52,7 +59,7 @@ namespace UpdaterERP
             {
                 // Fetch the latest release URL
                 frontUrl = await gitHubService.FetchLatestReleaseUrlAsync();
-                lblVersion.Content = "Online Version: "+gitHubService.GitHubName;
+                lblVersion.Content = "Last MSAR ERP Version: " + gitHubService.GitHubName;
                 if (string.IsNullOrEmpty(frontUrl))
                 {
                     lblState.Content = "No .zip asset found in the latest release.";
@@ -76,6 +83,8 @@ namespace UpdaterERP
                     txtPathFront.Text = paths[0];
                 if (paths.Length >= 2)
                     txtPathBack.Text = paths[1];
+                if (paths.Length >= 3)
+                    txtPathPhpIni.Text = paths[2];
             }
             catch (Exception ex)
             {
@@ -88,7 +97,7 @@ namespace UpdaterERP
             try
             {
                 // Save the paths to the file
-                pathStorageService.SavePaths(txtPathFront.Text, txtPathBack.Text);
+                pathStorageService.SavePaths(txtPathFront.Text, txtPathBack.Text, txtPathPhpIni.Text);
             }
             catch (Exception ex)
             {
@@ -126,17 +135,19 @@ private void BtnBrowseFront_Click(object sender, RoutedEventArgs e)
         {
             string frontFolderPath = txtPathFront.Text;
             string backFolderPath = txtPathBack.Text;
-
+            lblState.Style = (Style)FindResource("NormalLabel");
             // Validate folder paths if the corresponding checkbox is checked
             if (ChPathFront.IsChecked == true && string.IsNullOrEmpty(frontFolderPath))
             {
                 lblState.Content = "Please enter the frontend folder path.";
+                lblState.Style = (Style)FindResource("ErrorLabel");
                 return;
             }
 
             if (ChPathBack.IsChecked == true && string.IsNullOrEmpty(backFolderPath))
             {
                 lblState.Content = "Please enter the backend folder path.";
+                lblState.Style = (Style)FindResource("ErrorLabel");
                 return;
             }
 
@@ -177,6 +188,13 @@ private void BtnBrowseFront_Click(object sender, RoutedEventArgs e)
                 // Download and process back file if the checkbox is checked
                 if (ChPathBack.IsChecked == true)
                 {
+                    var result = FileService.SetPhpExtensionState(phpIniPath: txtPathPhpIni.Text, extensionName: "zip", enable: ChEnableZip.IsChecked==true);
+                    if (!result.state)
+                    {
+                        lblState.Content = "Failed to enable the zip extension in php.ini." + result.message;
+                        lblState.Style = (Style)FindResource("ErrorLabel");
+                        return;
+                    }
                     lblState.Content = "Downloading back files...";
                     string backZipPath = await DownloadFileAsync(backUrl, "back.zip", (progress, downloadedBytes, totalBytes) =>
                     {
@@ -255,5 +273,36 @@ private void BtnBrowseFront_Click(object sender, RoutedEventArgs e)
                 return System.IO.Path.Combine(Path.GetTempPath(), fileName);
             }
         }
+
+        private void Hyperlink_OnClick(object sender, RoutedEventArgs e)
+        {
+            // Get the last word from txtPathFront
+            string path = txtPathFront.Text.Trim();
+            string lastWord = path.Split('\\').LastOrDefault() ?? string.Empty;
+
+            if (!string.IsNullOrEmpty(lastWord))
+            {
+                // Construct the URL
+                string url = $"http://localhost/{lastWord}";
+
+                // Open the URL in the default browser
+                Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+            }
+            else
+            {
+                lblState.Content = "Invalid path. Please check the Frontend Path.";
+            }
+        }
+        private void BtnPhpIni_Click(object sender, RoutedEventArgs e)
+        {
+            var openFileDialog = new Microsoft.Win32.OpenFileDialog();
+            openFileDialog.Filter = "PHP Configuration File (*.ini)|*.ini";
+            if (openFileDialog.ShowDialog() == true)
+            {
+                txtPathPhpIni.Text = openFileDialog.FileName;
+                SavePaths();
+            }
+        }
+
     }
 }

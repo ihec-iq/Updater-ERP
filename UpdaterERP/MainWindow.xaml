@@ -4,7 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
-        Title="ERP Updater" Height="500" Width="920"
+        Title="ERP Msar Updater" Height="500" Width="920"
         WindowStartupLocation="CenterScreen"
         Background="#F5F5F5">
 
@@ -70,7 +70,7 @@
                                 <StackPanel Orientation="Horizontal">
                                     <Border CornerRadius="5" Background="White" BorderBrush="#CCCCCC" BorderThickness="1">
                                         <TextBox Name="txtPathFront" 
-                                                 Text="D:\xampp\htdocs\erp-msar1" 
+                                                 Text="D:\xampp\htdocs\erp-msar" 
                                                  Width="300" 
                                                  Padding="8" 
                                                  IsEnabled="{Binding ElementName=ChPathFront, Path=IsChecked}"
@@ -79,8 +79,10 @@
                                     <Button Name="BtnBrowseFront" 
                                             Content="Browse" 
                                             Width="75" 
+                                            Height="30"
                                             Margin="10,0,0,0" 
                                             Style="{StaticResource ModernButton}"
+                                            Background="Gray"
                                             Click="BtnBrowseFront_Click"/>
                                 </StackPanel>
                                 <Label Content="Path of Frontend must be set to folder erp-msar inside localhost directory" 
@@ -96,7 +98,7 @@
                                 <StackPanel Orientation="Horizontal">
                                     <Border CornerRadius="5" Background="White" BorderBrush="#CCCCCC" BorderThickness="1">
                                         <TextBox Name="txtPathBack" 
-                                                 Text="D:\xampp\htdocs\ihec-backend-111" 
+                                                 Text="D:\xampp\htdocs\ihec-backend-11" 
                                                  Width="300" 
                                                  Padding="8" 
                                                  IsEnabled="{Binding ElementName=ChPathBack, Path=IsChecked}"
@@ -104,9 +106,11 @@
                                     </Border>
                                     <Button Name="BtnBrowseBack" 
                                             Content="Browse" 
-                                            Width="75" 
+                                            Width="75"
+                                            Height="30"
                                             Margin="10,0,0,0" 
                                             Style="{StaticResource ModernButton}"
+                                            Background="Gray"
                                             Click="BtnBrowseBack_Click"/>
                                 </StackPanel>
                             </StackPanel>
@@ -162,13 +166,16 @@
                                         <TextBox Name="txtPathPhpIni" 
                                                  Width="300" 
                                                  Padding="8" 
+                                                 Text="D:\xampp\php\php.ini"
                                                  Style="{StaticResource ModernTextBox}"/>
                                     </Border>
                                     <Button Name="BtnPhpIni" 
                                             Content="Browse" 
                                             Width="75" 
+                                            Height="30"
                                             Margin="10,0,0,0" 
                                             Style="{StaticResource ModernButton}"
+                                            Background="Gray"
                                             Click="BtnPhpIni_Click"/>
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,5">

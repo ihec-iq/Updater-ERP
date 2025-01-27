@@ -4,7 +4,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Threading.Tasks;
 
-namespace UpdaterERP.Services
+namespace UpdaterMsarERP.Services
 {
     public class FileService
     {

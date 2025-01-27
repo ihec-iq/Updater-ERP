@@ -7,7 +7,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
     <ApplicationIcon>up-arrow.ico</ApplicationIcon>
-    <AssemblyVersion>25.1.23.1</AssemblyVersion>
+    <AssemblyVersion>25.1.26.1</AssemblyVersion>
   </PropertyGroup>
 
   <ItemGroup>

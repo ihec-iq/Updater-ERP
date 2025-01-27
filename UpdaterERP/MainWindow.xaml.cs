@@ -5,9 +5,9 @@ using System.Reflection;
 using System.Windows;
 using Microsoft.WindowsAPICodePack.Dialogs;
 
-using UpdaterERP.Services;
+using UpdaterMsarERP.Services;
 
-namespace UpdaterERP
+namespace UpdaterMsarERP
 {
     public partial class MainWindow : Window
     {

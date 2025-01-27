@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 
-namespace UpdaterERP.Services
+namespace UpdaterMsarERP.Services
 {
     public class PathStorageService
     {

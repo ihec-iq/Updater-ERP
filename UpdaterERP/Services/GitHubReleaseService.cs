@@ -3,7 +3,7 @@ using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace UpdaterERP.Services
+namespace UpdaterMsarERP.Services
 {
     public class GitHubReleaseService
     {
@@ -27,7 +27,7 @@ namespace UpdaterERP.Services
                 using (HttpClient client = new HttpClient())
                 {
                     // Set user agent header (required by GitHub API)
-                    client.DefaultRequestHeaders.UserAgent.ParseAdd("UpdaterERP");
+                    client.DefaultRequestHeaders.UserAgent.ParseAdd("UpdaterMsarERP");
 
                     // Fetch the latest release details
                     HttpResponseMessage response = await client.GetAsync(apiUrl);

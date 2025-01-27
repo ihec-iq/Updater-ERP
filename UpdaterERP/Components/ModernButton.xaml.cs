@@ -2,7 +2,7 @@
 using System.Windows.Controls;
 using System.Windows.Media;
 
-namespace UpdaterERP.Components
+namespace UpdaterMsarERP.Components
 {
     public partial class ModernButton : UserControl
     {

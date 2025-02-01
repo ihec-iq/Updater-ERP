@@ -4,7 +4,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Threading.Tasks;
 
-namespace UpdaterERP.Services
+namespace UpdaterMsarERP.Services
 {
     public class FileService
     {
@@ -175,5 +175,89 @@ namespace UpdaterERP.Services
                 throw new Exception($"Error renaming file: {ex.Message}");
             }
         }
+
+        public static (bool state, string message) SetPhpExtensionState(string phpIniPath, string extensionName, bool enable = true)
+        {
+            // Check if the php.ini file exists
+            if (!File.Exists(phpIniPath))
+            {
+                return (false, "php.ini file not found at the specified path.");
+            }
+
+            // Check if the filename is "php.ini"
+            string fileName = Path.GetFileName(phpIniPath);
+            if (!fileName.Equals("php.ini", StringComparison.OrdinalIgnoreCase))
+            {
+                return (false, "The specified file is not named 'php.ini'.");
+            }
+
+            // Read the php.ini file
+            string[] lines = File.ReadAllLines(phpIniPath);
+
+            // Flags to track if the extension exists and its current state
+            bool extensionExists = false;
+            bool extensionModified = false;
+
+            // Search for the extension
+            for (int i = 0; i < lines.Length; i++)
+            {
+                string trimmedLine = lines[i].Trim();
+
+                // Check if the line is related to the extension
+                if (trimmedLine.StartsWith($"extension={extensionName}", StringComparison.OrdinalIgnoreCase) ||
+                    trimmedLine.StartsWith($"extension=php_{extensionName}.dll", StringComparison.OrdinalIgnoreCase))
+                {
+                    extensionExists = true;
+
+                    // Check if the line is commented out
+                    bool isCommented = trimmedLine.StartsWith(";");
+
+                    // Enable the extension
+                    if (enable)
+                    {
+                        if (isCommented)
+                        {
+                            // Uncomment the line
+                            lines[i] = lines[i].TrimStart(';').Trim();
+                            extensionModified = true;
+                        }
+                    }
+                    // Disable the extension
+                    else
+                    {
+                        if (!isCommented)
+                        {
+                            // Comment out the line
+                            lines[i] = $";{lines[i]}";
+                            extensionModified = true;
+                        }
+                    }
+                }
+            }
+
+            // If the extension does not exist and we want to enable it, add it
+            if (!extensionExists && enable)
+            {
+                Array.Resize(ref lines, lines.Length + 1);
+                lines[lines.Length - 1] = $"extension={extensionName}"; // or $"extension=php_{extensionName}.dll" for Windows
+                extensionModified = true;
+            }
+
+            // Save the changes if the extension was modified
+            if (extensionModified)
+            {
+                File.WriteAllLines(phpIniPath, lines);
+                return (true, $"The '{extensionName}' extension has been {(enable ? "enabled" : "disabled")} in php.ini.");
+            }
+
+            // Return appropriate message if no changes were made
+            if (extensionExists)
+            {
+                return (true, $"The '{extensionName}' extension is already {(enable ? "enabled" : "disabled")} in php.ini.");
+            }
+
+            return (false, $"The '{extensionName}' extension could not be modified.");
+        }
+
     }
 }

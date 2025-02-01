@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 
-namespace UpdaterERP.Services
+namespace UpdaterMsarERP.Services
 {
     public class PathStorageService
     {
@@ -31,12 +31,12 @@ namespace UpdaterERP.Services
             return Array.Empty<string>(); // Return an empty array if the file doesn't exist
         }
 
-        public void SavePaths(string frontPath, string backPath)
+        public void SavePaths(string frontPath, string backPath,string phpIniPath)
         {
             try
             {
                 // Save the paths to the file
-                File.WriteAllLines(pathsFilePath, new[] { frontPath, backPath });
+                File.WriteAllLines(pathsFilePath, new[] { frontPath, backPath , phpIniPath });
             }
             catch (Exception ex)
             {

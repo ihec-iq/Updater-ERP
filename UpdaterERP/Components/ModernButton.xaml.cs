@@ -2,26 +2,26 @@
 using System.Windows.Controls;
 using System.Windows.Media;
 
-namespace UpdaterERP.Components
+namespace UpdaterMsarERP.Components
 {
     public partial class ModernButton : UserControl
     {
-        public static readonly DependencyProperty ContentProperty =
+        public static new readonly DependencyProperty ContentProperty =
             DependencyProperty.Register("Content", typeof(object), typeof(ModernButton));
 
-        public static readonly DependencyProperty WidthProperty =
+        public static new readonly DependencyProperty WidthProperty =
             DependencyProperty.Register("Width", typeof(double), typeof(ModernButton));
 
-        public static readonly DependencyProperty HeightProperty =
+        public static new readonly DependencyProperty HeightProperty =
             DependencyProperty.Register("Height", typeof(double), typeof(ModernButton));
 
-        public static readonly DependencyProperty PaddingProperty =
+        public static new readonly DependencyProperty PaddingProperty =
             DependencyProperty.Register("Padding", typeof(Thickness), typeof(ModernButton));
 
-        public static readonly DependencyProperty BackgroundProperty =
+        public static new readonly DependencyProperty BackgroundProperty =
             DependencyProperty.Register("Background", typeof(Brush), typeof(ModernButton));
 
-        public static readonly DependencyProperty ForegroundProperty =
+        public static new readonly DependencyProperty ForegroundProperty =
             DependencyProperty.Register("Foreground", typeof(Brush), typeof(ModernButton));
 
         public new object Content
